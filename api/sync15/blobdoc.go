@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
+	"io/ioutil"
 	"sort"
 	"strconv"
 	"strings"
@@ -108,6 +109,44 @@ func (d *BlobDoc) IndexReader() (io.ReadCloser, error) {
 	return pipeReader, nil
 }
 
+func (d *BlobDoc) ReadContentTags(fileEntry *Entry, r RemoteStorage) error {
+	if strings.HasSuffix(fileEntry.DocumentID, ".content") {
+		contentFile := archive.Content{}
+
+		meta, err := r.GetReader(fileEntry.Hash)
+		if err != nil {
+			return err
+		}
+		defer meta.Close()
+		content, err := ioutil.ReadAll(meta)
+		if err != nil {
+			return err
+		}
+		err = json.Unmarshal(content, &contentFile)
+		if err != nil {
+			return err
+		}
+		if contentFile.FileTags != nil {
+			fileTags := []string{}
+			for _, t := range contentFile.FileTags {
+				fileTags = append(fileTags, t.Name)
+			}
+			d.Metadata.FileTags = fileTags
+			log.Trace.Println("MIKE: file tags: ", fileTags)
+		}
+
+		if contentFile.PageTags != nil {
+			pageTags := []string{}
+			for _, t := range contentFile.PageTags {
+				pageTags = append(pageTags, t.Name)
+			}
+			d.Metadata.PageTags = pageTags
+		}
+	}
+
+	return nil
+}
+
 // ReadMetadata the document metadata from remote blob
 func (d *BlobDoc) ReadMetadata(fileEntry *Entry, r RemoteStorage) error {
 	if strings.HasSuffix(fileEntry.DocumentID, ".metadata") {
@@ -124,6 +163,7 @@ func (d *BlobDoc) ReadMetadata(fileEntry *Entry, r RemoteStorage) error {
 		if err != nil {
 			return err
 		}
+		log.Trace.Println("MIKE: UNMARSHAL metadata content: ", string(content))
 		err = json.Unmarshal(content, &metadata)
 		if err != nil {
 			log.Error.Printf("cannot read metadata %s %v", fileEntry.DocumentID, err)
@@ -183,6 +223,10 @@ func (d *BlobDoc) Mirror(e *Entry, r RemoteStorage) error {
 				if err != nil {
 					return err
 				}
+				err = d.ReadContentTags(newEntry, r)
+				if err != nil {
+					return err
+				}
 				currentEntry.Hash = newEntry.Hash
 			}
 			head = append(head, currentEntry)
@@ -197,6 +241,10 @@ func (d *BlobDoc) Mirror(e *Entry, r RemoteStorage) error {
 			if err != nil {
 				return err
 			}
+			err = d.ReadContentTags(newEntry, r)
+			if err != nil {
+				return err
+			}
 			head = append(head, newEntry)
 		}
 	}
@@ -205,6 +253,7 @@ func (d *BlobDoc) Mirror(e *Entry, r RemoteStorage) error {
 	return nil
 
 }
+
 func (d *BlobDoc) ToDocument() *model.Document {
 	var lastModified string
 	unixTime, err := strconv.ParseInt(d.Metadata.LastModified, 10, 64)
@@ -225,5 +274,7 @@ func (d *BlobDoc) ToDocument() *model.Document {
 		Type:           d.Metadata.CollectionType,
 		CurrentPage:    d.Metadata.LastOpenedPage,
 		ModifiedClient: lastModified,
+		FileTags:       d.Metadata.FileTags,
+		PageTags:       d.Metadata.PageTags,
 	}
 }

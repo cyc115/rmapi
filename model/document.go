@@ -12,27 +12,31 @@ const (
 )
 
 type Document struct {
-	ID                string
-	Version           int
-	Message           string
-	Success           bool
 	BlobURLGet        string
 	BlobURLGetExpires string
-	ModifiedClient    string
-	Type              string
-	VissibleName      string
-	CurrentPage       int
 	Bookmarked        bool
+	CurrentPage       int
+	FileTags          []string
+	ID                string
+	Message           string
+	ModifiedClient    string
+	PageTags          []string
 	Parent            string
+	Success           bool
+	Type              string
+	Version           int
+	VissibleName      string
 }
 
 type MetadataDocument struct {
+	FileTags       []string
 	ID             string
+	ModifiedClient string
+	PageTags       []string
 	Parent         string
-	VissibleName   string
 	Type           string
 	Version        int
-	ModifiedClient string
+	VissibleName   string
 }
 
 type DeleteDocument struct {
@@ -132,6 +136,8 @@ func (meta MetadataDocument) ToDocument() Document {
 		Type:           meta.Type,
 		Version:        1,
 		ModifiedClient: meta.ModifiedClient,
+		FileTags:       meta.FileTags,
+		PageTags:       meta.PageTags,
 	}
 }
 
@@ -141,6 +147,8 @@ func (doc Document) ToMetaDocument() MetadataDocument {
 		Parent:         doc.Parent,
 		VissibleName:   doc.VissibleName,
 		Type:           doc.Type,
+		FileTags:       doc.FileTags,
+		PageTags:       doc.PageTags,
 		Version:        doc.Version,
 		ModifiedClient: time.Now().UTC().Format(time.RFC3339Nano),
 	}

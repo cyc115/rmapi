@@ -26,6 +26,16 @@ func statCmd(ctx *ShellCtxt) *ishell.Cmd {
 				c.Err(errors.New("file doesn't exist"))
 				return
 			}
+			// // Create a custom struct to include FileTags
+			// type CustomDocument struct {
+			// 	*model.Document
+			// 	FileTags []string `json:"tags,omitempty"`
+			// }
+
+			// customDoc := CustomDocument{
+			// 	Document: node.Document,
+			// 	FileTags: node.Document.FileTags,
+			// }
 
 			jsn, err := json.MarshalIndent(node.Document, "", "  ")
 

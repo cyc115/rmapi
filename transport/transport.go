@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/http/httputil"
 	"strconv"
@@ -130,13 +129,11 @@ func (ctx HttpClientCtx) httpRawReq(authType AuthType, verb, url string, reqBody
 	}
 
 	response, err := ctx.Request(authType, verb, url, contentBody)
-
-	if response != nil {
-		defer response.Body.Close()
-	}
-
 	if err != nil {
 		return err
+	}
+	if response != nil {
+		defer response.Body.Close()
 	}
 
 	// We want to ingore the response
@@ -146,7 +143,7 @@ func (ctx HttpClientCtx) httpRawReq(authType AuthType, verb, url string, reqBody
 
 	switch resp.(type) {
 	case *BodyString:
-		bodyContent, err := ioutil.ReadAll(response.Body)
+		bodyContent, err := io.ReadAll(response.Body)
 
 		if err != nil {
 			return err
@@ -188,7 +185,7 @@ func (ctx HttpClientCtx) Request(authType AuthType, verb, url string, body io.Re
 	if log.TracingEnabled {
 		defer response.Body.Close()
 		dresponse, err := httputil.DumpResponse(response, true)
-		log.Trace.Printf("%s %v", string(dresponse), err)
+		log.Trace.Printf("%s %v %v", string(dresponse), response, err)
 	}
 
 	if response.StatusCode != 200 {

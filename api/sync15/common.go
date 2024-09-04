@@ -41,7 +41,7 @@ func getCachedTreePath() (string, error) {
 	return cacheFile, nil
 }
 
-const cacheVersion = 3
+const cacheVersion = 4
 
 func loadTree() (*HashTree, error) {
 	cacheFile, err := getCachedTreePath()
@@ -54,6 +54,7 @@ func loadTree() (*HashTree, error) {
 		if err != nil {
 			return nil, err
 		}
+		// log.Trace.Println("MIKE: UNMARSHAL loadTree: ", string(b))
 		err = json.Unmarshal(b, tree)
 		if err != nil {
 			log.Error.Println("cache corrupt")
@@ -76,7 +77,7 @@ func saveTree(tree *HashTree) error {
 		return err
 	}
 	tree.CacheVersion = cacheVersion
-	b, err := json.MarshalIndent(tree, "", "")
+	b, err := json.MarshalIndent(tree, "", "  ")
 	if err != nil {
 		return err
 	}
