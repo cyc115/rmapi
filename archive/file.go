@@ -105,7 +105,7 @@ type Content struct {
 	Pages          []string `json:"pages"`
 	Tags           []string `json:"pageTags"`
 	RedirectionMap []int    `json:"redirectionPageMap"`
-	TextScale      int      `json:"textScale"`
+	TextScale      float64   `json:"textScale"`
 
 	Transform Transform `json:"transform"`
 }
